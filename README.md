@@ -412,16 +412,99 @@ services:
 
 ## 🔧 Configuration
 
-### Environment Variables
-- `API_KEY`: Optional API key for authentication (if not set, no authentication required)
-- `PORT`: Server port (default: 8080)
+The system supports comprehensive configuration via command-line flags and environment variables. Command-line flags take precedence over environment variables.
 
-### System Limits
+### Command-Line Flags
+
+#### Server Configuration
+- `-port`: Server port (default: `8080`)
+- `-read-timeout`: HTTP read timeout (default: `10s`)
+- `-write-timeout`: HTTP write timeout (default: `10s`)
+- `-idle-timeout`: HTTP idle timeout (default: `60s`)
+- `-shutdown-timeout`: Graceful shutdown timeout (default: `10s`)
+
+#### Pub/Sub System Configuration
+- `-max-queue-size`: Maximum messages per client queue (default: `100`)
+- `-ring-buffer-size`: Ring buffer size for message replay (default: `100`)
+- `-ping-interval`: WebSocket ping interval (default: `54s`)
+- `-pong-wait`: WebSocket pong wait timeout (default: `60s`)
+- `-write-wait`: WebSocket write wait timeout (default: `10s`)
+- `-max-message-size`: Maximum message size in bytes (default: `1048576` = 1MB)
+- `-enable-compression`: Enable WebSocket compression (default: `false`)
+
+#### Security Configuration
+- `-api-key`: API key for authentication (default: empty = no auth required)
+- `-enable-cors`: Enable CORS support (default: `false`)
+- `-allowed-origins`: Comma-separated list of allowed origins (default: `*`)
+- `-rate-limit-per-min`: Rate limit per minute (default: `1000`)
+- `-rate-limit-burst`: Rate limit burst size (default: `100`)
+
+#### Logging Configuration
+- `-log-level`: Log level (debug, info, warn, error) (default: `info`)
+- `-log-format`: Log format (text, json) (default: `text`)
+
+#### Other Flags
+- `-help`: Show help information
+- `-version`: Show version information
+
+### Environment Variables
+
+All command-line flags can also be set via environment variables with the same names in uppercase:
+
+- `PORT`, `READ_TIMEOUT`, `WRITE_TIMEOUT`, `IDLE_TIMEOUT`, `SHUTDOWN_TIMEOUT`
+- `MAX_QUEUE_SIZE`, `RING_BUFFER_SIZE`, `PING_INTERVAL`, `PONG_WAIT`, `WRITE_WAIT`, `MAX_MESSAGE_SIZE`, `ENABLE_COMPRESSION`
+- `API_KEY`, `ENABLE_CORS`, `ALLOWED_ORIGINS`, `RATE_LIMIT_PER_MIN`, `RATE_LIMIT_BURST`
+- `LOG_LEVEL`, `LOG_FORMAT`
+
+### Usage Examples
+
+#### Command-Line Configuration
+```bash
+# Run with custom port and API key
+./plivo -port=9090 -api-key=my-secret-key
+
+# Run with custom queue size and compression
+./plivo -max-queue-size=200 -enable-compression
+
+# Run with debug logging
+./plivo -log-level=debug -log-format=json
+
+# Show help
+./plivo -help
+
+# Show version
+./plivo -version
+```
+
+#### Environment Variable Configuration
+```bash
+# Set environment variables
+export PORT=9090
+export API_KEY=my-secret-key
+export MAX_QUEUE_SIZE=200
+export LOG_LEVEL=debug
+
+# Run the application
+./plivo
+```
+
+#### Mixed Configuration
+```bash
+# Environment variables as defaults, command-line flags for overrides
+export API_KEY=default-key
+export LOG_LEVEL=info
+
+# Override with command-line flags
+./plivo -api-key=override-key -log-level=debug
+```
+
+### System Limits (Default Values)
 - **Message Queue Size**: 100 messages per client
 - **Ring Buffer Size**: 100 messages per topic
 - **Connection Timeout**: 60 seconds
-- **Graceful Shutdown Timeout**: 5 seconds
+- **Graceful Shutdown Timeout**: 10 seconds
 - **Ping Interval**: 54 seconds
+- **Max Message Size**: 1MB
 
 ## 🚨 Error Handling
 

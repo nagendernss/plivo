@@ -7,10 +7,10 @@ import (
 	"os"
 	"os/signal"
 	"plivo/docs"
+	"plivo/internal/config"
 	"plivo/internal/handlers"
 	"plivo/internal/pubsub"
 	"syscall"
-	"time"
 
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -36,13 +36,24 @@ import (
 // @name X-API-Key
 
 func main() {
+	// Load configuration from command-line flags and environment variables
+	cfg := config.LoadConfig()
+
+	log.Printf("Starting Plivo Pub/Sub System with configuration:")
+	log.Printf("  Server Port: %s", cfg.Server.Port)
+	log.Printf("  Max Queue Size: %d", cfg.PubSub.MaxQueueSize)
+	log.Printf("  Ring Buffer Size: %d", cfg.PubSub.RingBufferSize)
+	log.Printf("  API Key Required: %t", cfg.Security.APIKey != "")
+	log.Printf("  CORS Enabled: %t", cfg.Security.EnableCORS)
+	log.Printf("  Log Level: %s", cfg.Logging.Level)
+
 	// Initialize the hub
 	hub := pubsub.NewHub()
 	go hub.Run()
 
-	// Initialize handlers
-	wsHandler := handlers.NewWebSocketHandler(hub)
-	restHandler := handlers.NewRESTHandler(hub)
+	// Initialize handlers with configuration
+	wsHandler := handlers.NewWebSocketHandler(hub, cfg)
+	restHandler := handlers.NewRESTHandler(hub, cfg)
 
 	// Setup routes
 	r := mux.NewRouter()
@@ -71,13 +82,16 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	server := &http.Server{
-		Addr:    ":8080",
-		Handler: r,
+		Addr:         ":" + cfg.Server.Port,
+		Handler:      r,
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+		IdleTimeout:  cfg.Server.IdleTimeout,
 	}
 
 	// Start server in goroutine
 	go func() {
-		log.Println("Server starting on :8080")
+		log.Printf("Server starting on :%s", cfg.Server.Port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed to start: %v", err)
 		}
@@ -91,7 +105,7 @@ func main() {
 	hub.Shutdown()
 
 	// Shutdown HTTP server
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeout)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
 		log.Printf("Server shutdown error: %v", err)

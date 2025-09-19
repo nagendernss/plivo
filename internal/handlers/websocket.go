@@ -3,7 +3,7 @@ package handlers
 import (
 	"log"
 	"net/http"
-	"os"
+	"plivo/internal/config"
 	"plivo/internal/pubsub"
 
 	"github.com/google/uuid"
@@ -13,17 +13,30 @@ import (
 // WebSocketHandler handles WebSocket connections
 type WebSocketHandler struct {
 	hub *pubsub.Hub
+	cfg *config.Config
 }
 
 // NewWebSocketHandler creates a new WebSocket handler
-func NewWebSocketHandler(hub *pubsub.Hub) *WebSocketHandler {
-	return &WebSocketHandler{hub: hub}
+func NewWebSocketHandler(hub *pubsub.Hub, cfg *config.Config) *WebSocketHandler {
+	return &WebSocketHandler{
+		hub: hub,
+		cfg: cfg,
+	}
 }
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all origins
-	},
+// getUpgrader returns a websocket upgrader with CORS configuration
+func (h *WebSocketHandler) getUpgrader() websocket.Upgrader {
+	return websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			if !h.cfg.Security.EnableCORS {
+				return true // Allow all origins when CORS is disabled
+			}
+			// TODO: Implement proper origin checking based on AllowedOrigins
+			return true
+		},
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
 }
 
 // HandleWebSocket handles WebSocket connections
@@ -34,6 +47,7 @@ func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	upgrader := h.getUpgrader()
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("WebSocket upgrade error: %v", err)
@@ -50,7 +64,7 @@ func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 
 // authenticateRequest checks X-API-Key header
 func (h *WebSocketHandler) authenticateRequest(r *http.Request) bool {
-	apiKey := os.Getenv("API_KEY")
+	apiKey := h.cfg.Security.APIKey
 	if apiKey == "" {
 		// No API key set, allow all requests
 		return true

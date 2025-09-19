@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"os"
+	"plivo/internal/config"
 	"plivo/internal/pubsub"
 
 	"github.com/gorilla/mux"
@@ -12,11 +12,15 @@ import (
 // RESTHandler handles REST API endpoints
 type RESTHandler struct {
 	hub *pubsub.Hub
+	cfg *config.Config
 }
 
 // NewRESTHandler creates a new REST handler
-func NewRESTHandler(hub *pubsub.Hub) *RESTHandler {
-	return &RESTHandler{hub: hub}
+func NewRESTHandler(hub *pubsub.Hub, cfg *config.Config) *RESTHandler {
+	return &RESTHandler{
+		hub: hub,
+		cfg: cfg,
+	}
 }
 
 // CreateTopicRequest represents the request body for creating a topic
@@ -188,7 +192,7 @@ func (h *RESTHandler) Stats(w http.ResponseWriter, r *http.Request) {
 
 // authenticateRequest checks X-API-Key header
 func (h *RESTHandler) authenticateRequest(r *http.Request) bool {
-	apiKey := os.Getenv("API_KEY")
+	apiKey := h.cfg.Security.APIKey
 	if apiKey == "" {
 		// No API key set, allow all requests
 		return true

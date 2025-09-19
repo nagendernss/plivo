@@ -3,14 +3,15 @@ package handlers
 import (
 	"net/http"
 	"net/http/httptest"
-	"os"
+	"plivo/internal/config"
 	"plivo/internal/pubsub"
 	"testing"
 )
 
 func TestNewWebSocketHandler(t *testing.T) {
 	hub := pubsub.NewHub()
-	handler := NewWebSocketHandler(hub)
+	cfg := config.NewTestConfig()
+	handler := NewWebSocketHandler(hub, cfg)
 
 	if handler == nil {
 		t.Fatal("NewWebSocketHandler() returned nil")
@@ -19,15 +20,18 @@ func TestNewWebSocketHandler(t *testing.T) {
 	if handler.hub != hub {
 		t.Error("Hub reference is incorrect")
 	}
+
+	if handler.cfg != cfg {
+		t.Error("Config reference is incorrect")
+	}
 }
 
 func TestWebSocketAuthentication(t *testing.T) {
 	hub := pubsub.NewHub()
-	handler := NewWebSocketHandler(hub)
+	cfg := config.NewTestConfigWithAPIKey("test-key")
+	handler := NewWebSocketHandler(hub, cfg)
 
-	// Set API key
-	os.Setenv("API_KEY", "test-key")
-	defer os.Unsetenv("API_KEY")
+	// API key is set in the config
 
 	// Test request without API key
 	req := httptest.NewRequest("GET", "/ws", nil)
@@ -65,10 +69,8 @@ func TestWebSocketAuthentication(t *testing.T) {
 
 func TestWebSocketNoAuthenticationWhenKeyNotSet(t *testing.T) {
 	hub := pubsub.NewHub()
-	handler := NewWebSocketHandler(hub)
-
-	// Ensure no API key is set
-	os.Unsetenv("API_KEY")
+	cfg := config.NewTestConfig() // No API key set
+	handler := NewWebSocketHandler(hub, cfg)
 
 	// Test request without API key should not return 401
 	req := httptest.NewRequest("GET", "/ws", nil)
@@ -82,7 +84,12 @@ func TestWebSocketNoAuthenticationWhenKeyNotSet(t *testing.T) {
 }
 
 func TestWebSocketUpgrader(t *testing.T) {
+	hub := pubsub.NewHub()
+	cfg := config.NewTestConfig()
+	handler := NewWebSocketHandler(hub, cfg)
+
 	// Test that upgrader is configured correctly
+	upgrader := handler.getUpgrader()
 	if upgrader.CheckOrigin == nil {
 		t.Error("Upgrader CheckOrigin should be set")
 	}
@@ -99,7 +106,8 @@ func TestWebSocketUpgrader(t *testing.T) {
 
 func TestWebSocketHandlerIntegration(t *testing.T) {
 	hub := pubsub.NewHub()
-	handler := NewWebSocketHandler(hub)
+	cfg := config.NewTestConfigWithAPIKey("test-key")
+	handler := NewWebSocketHandler(hub, cfg)
 
 	// Start hub in background
 	go hub.Run()
@@ -118,10 +126,10 @@ func TestWebSocketHandlerIntegration(t *testing.T) {
 
 func TestAuthenticationFunction(t *testing.T) {
 	hub := pubsub.NewHub()
-	handler := NewWebSocketHandler(hub)
 
 	// Test with no API key set
-	os.Unsetenv("API_KEY")
+	cfg := config.NewTestConfig() // No API key
+	handler := NewWebSocketHandler(hub, cfg)
 	req := httptest.NewRequest("GET", "/ws", nil)
 
 	if !handler.authenticateRequest(req) {
@@ -129,31 +137,32 @@ func TestAuthenticationFunction(t *testing.T) {
 	}
 
 	// Test with API key set but no header
-	os.Setenv("API_KEY", "test-key")
-	defer os.Unsetenv("API_KEY")
+	cfgWithKey := config.NewTestConfigWithAPIKey("test-key")
+	handlerWithKey := NewWebSocketHandler(hub, cfgWithKey)
 
-	if handler.authenticateRequest(req) {
+	if handlerWithKey.authenticateRequest(req) {
 		t.Error("Should not authenticate when API key is set but no header provided")
 	}
 
 	// Test with correct API key
 	req.Header.Set("X-API-Key", "test-key")
 
-	if !handler.authenticateRequest(req) {
+	if !handlerWithKey.authenticateRequest(req) {
 		t.Error("Should authenticate with correct API key")
 	}
 
 	// Test with incorrect API key
 	req.Header.Set("X-API-Key", "wrong-key")
 
-	if handler.authenticateRequest(req) {
+	if handlerWithKey.authenticateRequest(req) {
 		t.Error("Should not authenticate with incorrect API key")
 	}
 }
 
 func TestWebSocketHandlerConcurrency(t *testing.T) {
 	hub := pubsub.NewHub()
-	handler := NewWebSocketHandler(hub)
+	cfg := config.NewTestConfigWithAPIKey("test-key")
+	handler := NewWebSocketHandler(hub, cfg)
 
 	// Start hub in background
 	go hub.Run()
@@ -182,7 +191,8 @@ func TestWebSocketHandlerConcurrency(t *testing.T) {
 
 func TestWebSocketHandlerWithDifferentOrigins(t *testing.T) {
 	hub := pubsub.NewHub()
-	handler := NewWebSocketHandler(hub)
+	cfg := config.NewTestConfigWithAPIKey("test-key")
+	handler := NewWebSocketHandler(hub, cfg)
 
 	// Test with different origins
 	origins := []string{
@@ -206,7 +216,8 @@ func TestWebSocketHandlerWithDifferentOrigins(t *testing.T) {
 
 func TestWebSocketHandlerErrorHandling(t *testing.T) {
 	hub := pubsub.NewHub()
-	handler := NewWebSocketHandler(hub)
+	cfg := config.NewTestConfigWithAPIKey("test-key")
+	handler := NewWebSocketHandler(hub, cfg)
 
 	// Test with malformed request
 	req := httptest.NewRequest("POST", "/ws", nil) // Wrong method
@@ -219,7 +230,8 @@ func TestWebSocketHandlerErrorHandling(t *testing.T) {
 
 func TestWebSocketHandlerWithHeaders(t *testing.T) {
 	hub := pubsub.NewHub()
-	handler := NewWebSocketHandler(hub)
+	cfg := config.NewTestConfigWithAPIKey("test-key")
+	handler := NewWebSocketHandler(hub, cfg)
 
 	// Test with various headers
 	req := httptest.NewRequest("GET", "/ws", nil)

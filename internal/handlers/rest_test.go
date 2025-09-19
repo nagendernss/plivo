@@ -5,13 +5,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"plivo/internal/config"
 	"plivo/internal/pubsub"
 	"testing"
 )
 
 func TestNewRESTHandler(t *testing.T) {
 	hub := pubsub.NewHub()
-	handler := NewRESTHandler(hub)
+	cfg := config.NewTestConfig()
+	handler := NewRESTHandler(hub, cfg)
 
 	if handler == nil {
 		t.Fatal("NewRESTHandler() returned nil")
@@ -20,13 +22,18 @@ func TestNewRESTHandler(t *testing.T) {
 	if handler.hub != hub {
 		t.Error("Hub reference is incorrect")
 	}
+
+	if handler.cfg != cfg {
+		t.Error("Config reference is incorrect")
+	}
 }
 
 // TestCreateTopic removed - was expecting wrong status codes
 
 func TestListTopics(t *testing.T) {
 	hub := pubsub.NewHub()
-	handler := NewRESTHandler(hub)
+	cfg := config.NewTestConfig()
+	handler := NewRESTHandler(hub, cfg)
 
 	// Create some topics
 	hub.CreateTopic("topic1")
@@ -61,7 +68,8 @@ func TestListTopics(t *testing.T) {
 
 func TestHealth(t *testing.T) {
 	hub := pubsub.NewHub()
-	handler := NewRESTHandler(hub)
+	cfg := config.NewTestConfig()
+	handler := NewRESTHandler(hub, cfg)
 
 	req := httptest.NewRequest("GET", "/health", nil)
 	w := httptest.NewRecorder()
@@ -89,7 +97,8 @@ func TestHealth(t *testing.T) {
 
 func TestStats(t *testing.T) {
 	hub := pubsub.NewHub()
-	handler := NewRESTHandler(hub)
+	cfg := config.NewTestConfig()
+	handler := NewRESTHandler(hub, cfg)
 
 	// Create some topics
 	hub.CreateTopic("topic1")
@@ -125,7 +134,8 @@ func TestStats(t *testing.T) {
 
 func TestHealthEndpointNoAuth(t *testing.T) {
 	hub := pubsub.NewHub()
-	handler := NewRESTHandler(hub)
+	cfg := config.NewTestConfig()
+	handler := NewRESTHandler(hub, cfg)
 
 	// Set API key
 	os.Setenv("API_KEY", "test-key")
