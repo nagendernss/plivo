@@ -3,18 +3,11 @@ package pubsub
 import (
 	"encoding/json"
 	"log"
-	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
-
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all origins in this demo
-	},
-}
 
 // Client represents a WebSocket client
 type Client struct {
@@ -218,17 +211,6 @@ func (c *Client) handleUnsubscribe(msg *ClientMessage) {
 // handlePing responds to ping messages
 func (c *Client) handlePing(msg *ClientMessage) {
 	c.sendPong(msg.RequestID)
-}
-
-// sendMessage sends a message to the client with backpressure handling
-func (c *Client) sendMessage(msg *ServerMessage) {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		log.Printf("Error marshaling message: %v", err)
-		return
-	}
-
-	c.sendWithBackpressure(data)
 }
 
 // sendWithBackpressure handles message sending with backpressure management

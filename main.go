@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"plivo/internal/handlers"
 	"plivo/internal/pubsub"
 	"syscall"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -59,7 +61,9 @@ func main() {
 	hub.Shutdown()
 
 	// Shutdown HTTP server
-	if err := server.Shutdown(nil); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
 		log.Printf("Server shutdown error: %v", err)
 	}
 
