@@ -1,0 +1,151 @@
+basePath: /
+definitions:
+  handlers.CreateTopicRequest:
+    properties:
+      name:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: A production-ready in-memory Pub/Sub system with WebSocket and REST
+    API support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Plivo Pub/Sub System API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: Get system health status including uptime and basic metrics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: System health status
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Health check
+      tags:
+      - system
+  /stats:
+    get:
+      description: Get detailed system statistics including topic metrics and performance
+        data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: System statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing API key
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: System statistics
+      tags:
+      - system
+  /topics:
+    get:
+      description: Get a list of all available topics with their subscriber counts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of topics
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing API key
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: List all topics
+      tags:
+      - topics
+    post:
+      consumes:
+      - application/json
+      description: Create a new pub/sub topic for message publishing and subscription
+      parameters:
+      - description: Topic creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateTopicRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Topic created successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request - invalid JSON or missing topic name
+          schema:
+            type: string
+        "401":
+          description: Unauthorized - invalid or missing API key
+          schema:
+            type: string
+        "409":
+          description: Conflict - topic already exists
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new topic
+      tags:
+      - topics
+  /topics/{topic}:
+    delete:
+      description: Delete a topic and disconnect all its subscribers
+      parameters:
+      - description: Topic name
+        in: path
+        name: topic
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Topic deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing API key
+          schema:
+            type: string
+        "404":
+          description: Not found - topic does not exist
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a topic
+      tags:
+      - topics
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: X-API-Key
+    type: apiKey
+swagger: "2.0"

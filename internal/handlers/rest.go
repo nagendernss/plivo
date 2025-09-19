@@ -25,6 +25,18 @@ type CreateTopicRequest struct {
 }
 
 // CreateTopic creates a new topic
+// @Summary Create a new topic
+// @Description Create a new pub/sub topic for message publishing and subscription
+// @Tags topics
+// @Accept json
+// @Produce json
+// @Param request body CreateTopicRequest true "Topic creation request"
+// @Success 201 {object} map[string]string "Topic created successfully"
+// @Failure 400 {string} string "Bad request - invalid JSON or missing topic name"
+// @Failure 401 {string} string "Unauthorized - invalid or missing API key"
+// @Failure 409 {string} string "Conflict - topic already exists"
+// @Security ApiKeyAuth
+// @Router /topics [post]
 func (h *RESTHandler) CreateTopic(w http.ResponseWriter, r *http.Request) {
 	// Check authentication
 	if !h.authenticateRequest(r) {
@@ -57,6 +69,14 @@ func (h *RESTHandler) CreateTopic(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListTopics returns all topics
+// @Summary List all topics
+// @Description Get a list of all available topics with their subscriber counts
+// @Tags topics
+// @Produce json
+// @Success 200 {object} map[string]interface{} "List of topics"
+// @Failure 401 {string} string "Unauthorized - invalid or missing API key"
+// @Security ApiKeyAuth
+// @Router /topics [get]
 func (h *RESTHandler) ListTopics(w http.ResponseWriter, r *http.Request) {
 	// Check authentication
 	if !h.authenticateRequest(r) {
@@ -82,6 +102,16 @@ func (h *RESTHandler) ListTopics(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteTopic deletes a topic
+// @Summary Delete a topic
+// @Description Delete a topic and disconnect all its subscribers
+// @Tags topics
+// @Produce json
+// @Param topic path string true "Topic name"
+// @Success 200 {object} map[string]string "Topic deleted successfully"
+// @Failure 401 {string} string "Unauthorized - invalid or missing API key"
+// @Failure 404 {string} string "Not found - topic does not exist"
+// @Security ApiKeyAuth
+// @Router /topics/{topic} [delete]
 func (h *RESTHandler) DeleteTopic(w http.ResponseWriter, r *http.Request) {
 	// Check authentication
 	if !h.authenticateRequest(r) {
@@ -105,6 +135,12 @@ func (h *RESTHandler) DeleteTopic(w http.ResponseWriter, r *http.Request) {
 }
 
 // Health returns system health status
+// @Summary Health check
+// @Description Get system health status including uptime and basic metrics
+// @Tags system
+// @Produce json
+// @Success 200 {object} map[string]interface{} "System health status"
+// @Router /health [get]
 func (h *RESTHandler) Health(w http.ResponseWriter, r *http.Request) {
 	// Health endpoint doesn't require authentication
 	stats := h.hub.GetStats()
@@ -118,6 +154,14 @@ func (h *RESTHandler) Health(w http.ResponseWriter, r *http.Request) {
 }
 
 // Stats returns system statistics
+// @Summary System statistics
+// @Description Get detailed system statistics including topic metrics and performance data
+// @Tags system
+// @Produce json
+// @Success 200 {object} map[string]interface{} "System statistics"
+// @Failure 401 {string} string "Unauthorized - invalid or missing API key"
+// @Security ApiKeyAuth
+// @Router /stats [get]
 func (h *RESTHandler) Stats(w http.ResponseWriter, r *http.Request) {
 	// Check authentication
 	if !h.authenticateRequest(r) {

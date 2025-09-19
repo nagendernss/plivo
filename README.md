@@ -127,6 +127,57 @@ A production-ready in-memory Pub/Sub system built in Go with WebSocket and REST 
 #### Authentication
 All endpoints (except `/health`) require `X-API-Key` header if `API_KEY` environment variable is set.
 
+## 📚 API Documentation (Swagger)
+
+The API includes comprehensive Swagger/OpenAPI documentation that provides an interactive interface for exploring and testing all endpoints.
+
+### Accessing Swagger Documentation
+
+Once the server is running, you can access the Swagger documentation at:
+
+- **Swagger UI**: `http://localhost:8080/swagger/`
+- **OpenAPI JSON Spec**: `http://localhost:8080/swagger/doc.json`
+
+### Features
+
+- **Interactive API Explorer**: Test all REST endpoints directly from the browser
+- **Request/Response Examples**: See example payloads and responses for each endpoint
+- **Authentication Support**: Test endpoints with API key authentication
+- **Real-time Testing**: Make actual API calls and see live responses
+- **Schema Validation**: View detailed request/response schemas
+
+### Using Swagger UI
+
+1. **Navigate to** `http://localhost:8080/swagger/` in your browser
+2. **Explore Endpoints**: Click on any endpoint to expand its details
+3. **Test Endpoints**: Click "Try it out" to test any endpoint
+4. **Authentication**: If using API keys, click the "Authorize" button and enter your API key
+5. **View Responses**: Execute requests and see real responses from your server
+
+### Available Endpoints in Swagger
+
+- **POST /topics** - Create a new topic
+- **GET /topics** - List all topics with subscriber counts  
+- **DELETE /topics/{topic}** - Delete a topic and disconnect all subscribers
+- **GET /health** - System health status (no authentication required)
+- **GET /stats** - Detailed system statistics and metrics
+
+### Example: Testing with Swagger
+
+1. Open `http://localhost:8080/swagger/`
+2. Find the "POST /topics" endpoint
+3. Click "Try it out"
+4. Enter a topic name in the request body:
+   ```json
+   {
+     "name": "test-topic"
+   }
+   ```
+5. Click "Execute" to create the topic
+6. View the response and status code
+
+The Swagger documentation is automatically generated from the code comments and annotations in your Go source files, ensuring it stays up-to-date with your API implementation.
+
 ## 💡 Usage Examples
 
 ### WebSocket Operations
